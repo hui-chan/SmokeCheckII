@@ -29,7 +29,7 @@ public class BlackDegree extends AppCompatActivity {
                 int green = Color.green(pixelColor);
                 int blue = Color.blue(pixelColor);
 
-                // 计算林格曼黑度值的近似，这只是一个示例，实际的计算可能需要更复杂的算法
+                // 计算林格曼黑度值的近似
                 double blackness = (red + green + blue) / 3.0;
 
                 totalBlackness += blackness;
