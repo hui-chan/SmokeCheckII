@@ -2,9 +2,11 @@ package com.example.takephoto_crop;
 
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -15,6 +17,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,7 +29,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public  class MainActivity extends AppCompatActivity {
-    private Button btn_2 , btn_3;
+    private Button btn_2 , btn_3, btn_4;
+    private TextView tv1;
     private ImageView iv_image;
     private Uri iconUri;
     private Uri cropImageUri;
@@ -33,6 +38,7 @@ public  class MainActivity extends AppCompatActivity {
     private int state;
     private String name = "crop_image.jpg";
 
+    @SuppressLint("MissingInflatedId")
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,6 +46,8 @@ public  class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         btn_2 = findViewById(R.id.btn_2);
         btn_3 = findViewById(R.id.btn_3);
+        btn_4 = findViewById(R.id.btn_4);
+        tv1=findViewById(R.id.tv1);
         iv_image = findViewById(R.id.iv_image);
         requestAllPower();//获取动态权限
         btn_2.setOnClickListener(new View.OnClickListener() {
@@ -54,13 +62,22 @@ public  class MainActivity extends AppCompatActivity {
                 openP();
             }
         });
+        btn_4.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                blackDetection();
+            }
+        });
     }
+
+    //selete photo
     public void seleP(){
         Intent intent = new Intent(Intent.ACTION_PICK, null);
         intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
         startActivityForResult(intent, 1);
     }
 
+    //open camera to take photo
     public void openP(){
         StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
         StrictMode.setVmPolicy(builder.build());
@@ -187,5 +204,16 @@ public  class MainActivity extends AppCompatActivity {
 
             }
         }
+    }
+
+
+    public void blackDetection(){
+        Toast.makeText(getApplicationContext(),"黑度检测",Toast.LENGTH_SHORT).show();
+        //在这里调用黑度检测方法
+        BitmapDrawable bmpDrawable = (BitmapDrawable) iv_image.getDrawable();
+        Bitmap bitmap = bmpDrawable.getBitmap();
+        int blackDegree=BlackDegree.calculateImageLingemannBlackness(bitmap);
+        String text=String.valueOf(blackDegree);
+        tv1.setText("林格曼黑度值为："+text);
     }
 }
