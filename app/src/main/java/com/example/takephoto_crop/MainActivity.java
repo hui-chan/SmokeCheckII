@@ -1,8 +1,13 @@
 package com.example.takephoto_crop;
 
 
+import static android.os.Environment.DIRECTORY_PICTURES;
+import static android.os.Environment.getExternalStoragePublicDirectory;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -23,20 +28,21 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.FileProvider;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 public  class MainActivity extends AppCompatActivity {
     private Button btn_2 , btn_3, btn_4;
     private TextView tv1;
     private ImageView iv_image;
-    private Uri iconUri;
-    private Uri cropImageUri;
-    private int a = 1;
-    private int state;
-    private String name = "crop_image.jpg";
+    private Uri tempUri;
+    private Uri photoUri;//拍照所得照片的uri
+    private Uri cropImageUri;//裁剪所得图片的uri
+
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -49,6 +55,7 @@ public  class MainActivity extends AppCompatActivity {
         btn_4 = findViewById(R.id.btn_4);
         tv1=findViewById(R.id.tv1);
         iv_image = findViewById(R.id.iv_image);
+
         requestAllPower();//获取动态权限
         btn_2.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -59,7 +66,11 @@ public  class MainActivity extends AppCompatActivity {
         btn_3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                openP();
+                try {
+                    openP();
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
         btn_4.setOnClickListener(new View.OnClickListener() {
@@ -70,27 +81,31 @@ public  class MainActivity extends AppCompatActivity {
         });
     }
 
-    //selete photo
+    //selete picture
     public void seleP(){
+        tv1.setText("");//清空textview
+        Log.d("tag","进入图库选择图片");
         Intent intent = new Intent(Intent.ACTION_PICK, null);
         intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
         startActivityForResult(intent, 1);
     }
 
     //open camera to take photo
-    public void openP(){
+    public void openP() throws FileNotFoundException {
+        tv1.setText("");//清空textview
+        Log.d("tag","打开相机拍摄照片");
         StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
         StrictMode.setVmPolicy(builder.build());
         builder.detectFileUriExposure();
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         //拍照图片保存到指定的路径
-        name = "sdd" + name;
-        File cropFilee = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),name);
-        cropImageUri = Uri.fromFile(cropFilee);
-        intent.putExtra(MediaStore.EXTRA_OUTPUT,cropImageUri);
+        String photoName = "Smocheck"+System.currentTimeMillis() + ".jpg";
+        File photo = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),photoName);
+        photoUri = Uri.fromFile(photo);
+        Log.d("tag","照片存储到"+photoUri);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT,photoUri);
         startActivityForResult(intent, 3);
-        state = 1;
     }
 
 
@@ -107,9 +122,7 @@ public  class MainActivity extends AppCompatActivity {
      * @param
      */
     private void startCropImage(Uri uri) {
-        if(state == 1){
-            state = 0;
-        }
+        Log.d("tag","进入裁剪界面");
         Intent intent = new Intent("com.android.camera.action.CROP");
         intent.setDataAndType(uri, "image/*");
         // 使图片处于可裁剪状态
@@ -132,14 +145,13 @@ public  class MainActivity extends AppCompatActivity {
         intent.putExtra("scale", true);
 
         // 传递原图路径
-//        File cropFile = new File(Environment.getExternalStorageDirectory() + "/crop_image.jpg");
         File cropFile;
-        name = a + "crop_image.jpg";
+        String cropImageName = "Smocheck"+System.currentTimeMillis() + ".jpg";
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
             //虽然getExternalStoragePublicDirectory方法被淘汰了，但是不影响使用
-            cropFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),name);
+            cropFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),cropImageName);
         }else{
-            cropFile = new File(getExternalCacheDir(),name);
+            cropFile = new File(getExternalCacheDir(),cropImageName);
         }
 
         try {
@@ -157,9 +169,8 @@ public  class MainActivity extends AppCompatActivity {
         intent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString());
         // return-data=true传递的为缩略图，小米手机默认传递大图，所以会导致onActivityResult调用失败
         intent.putExtra("return-data", false);
-//        intent.putExtra(MediaStore.EXTRA_OUTPUT, cropImageUri);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, cropImageUri);
-
+        Log.d("tag","裁剪后图片存储到"+cropImageUri);
         startActivityForResult(intent, 2);
         intent = null;
     }
@@ -167,46 +178,58 @@ public  class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
-        System.out.println("2222");
-        if(state == 1){
-            iconUri = cropImageUri;
-            startCropImage(iconUri);
-        }
-
-        if (intent != null) {
-            switch (requestCode) {
-                // 将选择的图片进行裁剪
+        Log.e("tag","进行界面跳转和传递数据");
+        switch (requestCode) {
+                //将图库选择的图片进行裁剪
                 case 1:
-                    if (intent.getData() != null) {
-                        iconUri = intent.getData();
-                        startCropImage(iconUri);
+                    Log.e("tag","将图库选择的图片进行裁剪");
+                    if (intent != null){
+                        if (intent.getData() != null) {
+                            tempUri = intent.getData();
+                            startCropImage(tempUri);
+                        }
                     }
                     break;
+                //将拍照所得的图片进行裁剪
                 case 3:
-                    System.out.println("11");
-                    System.out.println("22");
-                    iconUri = cropImageUri;
-                    startCropImage(iconUri);
+                    Log.e("tag","拍摄完毕，将拍照所得的图片进行裁剪");
+                    //将图片插入系统图册
+                    try {
+                        String photoName = "Smocheck"+System.currentTimeMillis() + ".jpg";
+                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(photoUri));
+                        saveToSystemGallery(bitmap,photoName);
+                    } catch (FileNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                    tempUri = photoUri;
+                    startCropImage(tempUri);
                     break;
+                //裁剪完毕，退出裁剪界面
                 case 2:
+                    Log.e("tag","裁剪完毕");
                     if (resultCode == RESULT_OK) {
-//                           Bitmap bitmap = BitmapFactory.decodeStream
-//                                  (getContentResolver()
-//                                            .openInputStream(cropImageUri));
+                        //将图片插入系统图册
+                        try {
+                            String photoName = "Smocheck"+System.currentTimeMillis() + ".jpg";
+                            Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(cropImageUri));
+                            saveToSystemGallery(bitmap,photoName);
+                        } catch (FileNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+
                         System.out.println("---" + cropImageUri);
                         iv_image.setImageURI(cropImageUri); // 将裁剪后的照片显示出来
                         cropImageUri = null;
                     }
-                    a= a+1;
                     break;
                 default:
                     break;
 
-            }
         }
+
     }
 
-
+    //黑度检测方法
     public void blackDetection(){
         Toast.makeText(getApplicationContext(),"黑度检测",Toast.LENGTH_SHORT).show();
         //在这里调用黑度检测方法
@@ -216,4 +239,36 @@ public  class MainActivity extends AppCompatActivity {
         String text=String.valueOf(blackDegree);
         tv1.setText("林格曼黑度值为："+text);
     }
+
+
+    //保存位图到本地
+    public void saveToSystemGallery(Bitmap bmp,String fileName) throws FileNotFoundException {
+        // 首先保存图片
+        //调用 getExternalStoragePublicDirectory()获得目录，保存公共文件到外部存储
+        File appDir = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_PICTURES),"SmoCheck");
+
+        if (!appDir.exists()) {
+            appDir.mkdir();
+        }
+        File file = new File(appDir, fileName);
+        try {
+            FileOutputStream fos = new FileOutputStream(file);
+            bmp.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+            fos.flush();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // 其次把文件插入到系统图库
+        MediaStore.Images.Media.insertImage(getContentResolver(), file.getAbsolutePath(), fileName, null);
+        //高版本的android对文件权限的管控抓的很严格,理论上两个应用之间的文件传递现在都应该是用FileProvider去实现,而不能用Uri.fromFile(File file)
+        Uri uri= FileProvider.getUriForFile(this, "com.example.takephoto_crop.fileProvider", file);
+        sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri));
+
+    }
+
+
 }

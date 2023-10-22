@@ -3,14 +3,24 @@
 android:layout_width="match_parent"
 android:layout_height="match_parent"
 android:orientation="vertical"
-android:background="@color/black">
+android:background="@color/white">
+<TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/white"
+        android:text="Black Level Measure"
+        android:textAlignment="center"
+        android:textSize="30dp"
+        android:background="#6750A3"
+/>
 <Button
     android:id="@+id/btn_2"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:text="打开图库"
+    android:text="进入图库"
     android:layout_gravity="center"
-
+    android:textSize="20dp"
     android:textColor="@color/white"
     />
 <Button
@@ -19,7 +29,7 @@ android:background="@color/black">
     android:layout_height="wrap_content"
     android:text="打开相机"
     android:layout_gravity="center"
-
+    android:textSize="20dp"
     android:textColor="@color/white"
     />
 <Button
@@ -28,7 +38,7 @@ android:background="@color/black">
         android:layout_height="wrap_content"
         android:text="黑度检测"
         android:layout_gravity="center"
-
+        android:textSize="20dp"
         android:textColor="@color/white"
 />
 <TextView
@@ -36,8 +46,9 @@ android:background="@color/black">
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:textColor="@color/white"
-    android:textSize="40dp"
-    android:background="#673AB7"
+    android:textSize="25dp"
+    android:textAlignment="center"
+    android:background="#6750A3"
 />
 <ImageView
     android:id="@+id/iv_image"
