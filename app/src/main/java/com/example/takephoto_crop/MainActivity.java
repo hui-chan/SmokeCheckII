@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
@@ -36,12 +37,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 public  class MainActivity extends AppCompatActivity {
-    private Button btn_2 , btn_3, btn_4;
+    private Button btn_2 , btn_3, btn_4,btn_5;
     private TextView tv1;
     private ImageView iv_image;
+    private ImageView iv_poster_image;
     private Uri tempUri;
     private Uri photoUri;//拍照所得照片的uri
     private Uri cropImageUri;//裁剪所得图片的uri
+    private int blackDegree;
+    public static Bitmap imageBitmap;
+
+
 
 
     @SuppressLint("MissingInflatedId")
@@ -53,16 +59,22 @@ public  class MainActivity extends AppCompatActivity {
         btn_2 = findViewById(R.id.btn_2);
         btn_3 = findViewById(R.id.btn_3);
         btn_4 = findViewById(R.id.btn_4);
+        btn_5 = findViewById(R.id.btn_5);
         tv1=findViewById(R.id.tv1);
         iv_image = findViewById(R.id.iv_image);
+        iv_poster_image = findViewById(R.id.iv_poster_image);
 
         requestAllPower();//获取动态权限
+
+        //打开相册选择图片
         btn_2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 seleP();
             }
         });
+
+        //打开相机拍摄照片
         btn_3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -73,10 +85,20 @@ public  class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        //黑度检测
         btn_4.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 blackDetection();
+            }
+        });
+
+        //生成海报
+        btn_5.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                generatePoster();
             }
         });
     }
@@ -196,8 +218,8 @@ public  class MainActivity extends AppCompatActivity {
                     //将图片插入系统图册
                     try {
                         String photoName = "Smocheck"+System.currentTimeMillis() + ".jpg";
-                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(photoUri));
-                        saveToSystemGallery(bitmap,photoName);
+                        imageBitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(photoUri));
+                        saveToSystemGallery(imageBitmap,photoName);
                     } catch (FileNotFoundException e) {
                         throw new RuntimeException(e);
                     }
@@ -211,8 +233,8 @@ public  class MainActivity extends AppCompatActivity {
                         //将图片插入系统图册
                         try {
                             String photoName = "Smocheck"+System.currentTimeMillis() + ".jpg";
-                            Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(cropImageUri));
-                            saveToSystemGallery(bitmap,photoName);
+                            imageBitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(cropImageUri));
+                            saveToSystemGallery(imageBitmap,photoName);
                         } catch (FileNotFoundException e) {
                             throw new RuntimeException(e);
                         }
@@ -235,7 +257,7 @@ public  class MainActivity extends AppCompatActivity {
         //在这里调用黑度检测方法
         BitmapDrawable bmpDrawable = (BitmapDrawable) iv_image.getDrawable();
         Bitmap bitmap = bmpDrawable.getBitmap();
-        int blackDegree=BlackDegree.calculateImageLingemannBlackness(bitmap);
+        blackDegree=BlackDegree.calculateImageLingemannBlackness(bitmap);
         String text=String.valueOf(blackDegree);
         tv1.setText("林格曼黑度值为："+text);
     }
@@ -269,6 +291,17 @@ public  class MainActivity extends AppCompatActivity {
         sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri));
 
     }
+
+    public void generatePoster(){
+        Intent intent = new Intent();
+        intent.putExtra("black_degree",blackDegree);
+        //前一个（MainActivity.this）是目前页面，后面一个是要跳转的下一个页面
+        intent.setClass(MainActivity.this, Poster.class);
+        startActivity(intent);
+
+
+    }
+
 
 
 }
