@@ -18,7 +18,7 @@ public class BlackDegree extends AppCompatActivity {
         int width = image.getWidth();
         int height = image.getHeight();
         int totalPixels = width * height;
-        double totalBlackness = 0.0;
+        int totalBlackness = 0;
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
@@ -29,20 +29,22 @@ public class BlackDegree extends AppCompatActivity {
                 int green = Color.green(pixelColor);
                 int blue = Color.blue(pixelColor);
 
-                // 计算林格曼黑度值的近似
-                double blackness = (red + green + blue) / 3.0;
+                // 计算每个点的“黑度”,值越小越黑，值为0为纯黑，值为255为纯白
+                int blackness = (red + green + blue) / 3;
 
                 totalBlackness += blackness;
             }
         }
 
-        // 计算平均林格曼黑度值
-        double averageLingemannBlackness = totalBlackness / (totalPixels*256);
-        if(averageLingemannBlackness<0.05)return 5;
-        else if (averageLingemannBlackness<0.2) return 4;
-        else if (averageLingemannBlackness<0.4) return 3;
-        else if(averageLingemannBlackness<0.6)return 2;
-        else if(averageLingemannBlackness<0.8)return 1;
+        // 计算平均黑度
+        double averageBlackness = (double)totalBlackness /totalPixels;
+        //根据平均黑度与255的比值确定林格曼黑度
+        double rate=averageBlackness/255;
+        if(rate<0.05)return 5;
+        else if (rate<0.2) return 4;
+        else if (rate<0.4) return 3;
+        else if(rate<0.6)return 2;
+        else if(rate<0.8)return 1;
         else return 0;
     }
 
