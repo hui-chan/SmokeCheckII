@@ -7,7 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 
 
-public class BlackDegree extends AppCompatActivity {
+public class BlackDegreeUtil extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

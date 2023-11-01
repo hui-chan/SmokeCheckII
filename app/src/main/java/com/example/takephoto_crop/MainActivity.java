@@ -2,16 +2,12 @@ package com.example.takephoto_crop;
 
 
 import static android.os.Environment.DIRECTORY_PICTURES;
-import static android.os.Environment.getExternalStoragePublicDirectory;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
@@ -146,6 +142,9 @@ public  class MainActivity extends AppCompatActivity {
     private void startCropImage(Uri uri) {
         Log.d("tag","进入裁剪界面");
         Intent intent = new Intent("com.android.camera.action.CROP");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        }
         intent.setDataAndType(uri, "image/*");
         // 使图片处于可裁剪状态
         intent.putExtra("crop", "true");
@@ -220,11 +219,11 @@ public  class MainActivity extends AppCompatActivity {
                         String photoName = "Smocheck"+System.currentTimeMillis() + ".jpg";
                         imageBitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(photoUri));
                         saveToSystemGallery(imageBitmap,photoName);
+                        startCropImage(photoUri);
                     } catch (FileNotFoundException e) {
                         throw new RuntimeException(e);
                     }
-                    tempUri = photoUri;
-                    startCropImage(tempUri);
+
                     break;
                 //裁剪完毕，退出裁剪界面
                 case 2:
@@ -257,7 +256,7 @@ public  class MainActivity extends AppCompatActivity {
         //在这里调用黑度检测方法
         BitmapDrawable bmpDrawable = (BitmapDrawable) iv_image.getDrawable();
         Bitmap bitmap = bmpDrawable.getBitmap();
-        blackDegree=BlackDegree.calculateImageLingemannBlackness(bitmap);
+        blackDegree= BlackDegreeUtil.calculateImageLingemannBlackness(bitmap);
         String text=String.valueOf(blackDegree);
         tv1.setText("林格曼黑度值为："+text);
     }
@@ -296,7 +295,7 @@ public  class MainActivity extends AppCompatActivity {
         Intent intent = new Intent();
         intent.putExtra("black_degree",blackDegree);
         //前一个（MainActivity.this）是目前页面，后面一个是要跳转的下一个页面
-        intent.setClass(MainActivity.this, Poster.class);
+        intent.setClass(MainActivity.this, ShareActivity.class);
         startActivity(intent);
 
 
